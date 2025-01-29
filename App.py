@@ -1,12 +1,15 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session
 import sqlite3
 import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from secrets import token_hex
+import config
 
 app = Flask(__name__)
+app.secret_key = config.secret_key
 
-language="english"
+# TODO - Add a language selector
+# language="english"
 
 # Render front page
 @app.route("/")
@@ -14,29 +17,34 @@ def index():
     return render_template("index.html")
 
 # Render login page
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        if not username or not password:
+            return "ERROR: All fields are required"
+        
+        # Check if user exists
+        user_data = db.query("SELECT * FROM Users WHERE username = ?", [username])
+        if not user_data:
+            return "ERROR: Invalid Credentials"
+        
+        # Check if password is correct
+        user_data = user_data[0]
+        if check_password_hash(user_data["hashed_password"], (password + user_data["salt"])):
+            session["username"] = user_data["username"]
+            return redirect("/")
+        
+        return "ERROR: Invalid Credentials"
+
     return render_template("login.html")
 
-# Authenticate user
-@app.route("/authenticate", methods=["POST"])
-def authenticate():
-    username = request.form["username"]
-    password = request.form["password"]
-    if not username or not password:
-        return "ERROR: All fields are required"
-    
-    # Check if user exists
-    user_data = db.query("SELECT * FROM Users WHERE username = ?", [username])
-    if not user_data:
-        return "ERROR: Invalid Credentials"
-    
-    # Check if password is correct
-    user_data = user_data[0]
-    if not check_password_hash(user_data["hashed_password"], (password + user_data["salt"])):
-        return "ERROR: Invalid Credentials"
-    
-    return "Logged in"
+# Log out user
+@app.route("/logout")
+def logout():
+    del session["username"]
+    return redirect("/")
 
 # Render register page
 @app.route("/register")
@@ -74,6 +82,6 @@ def create():
     return "Account created"
 
 
-# Allows the app to run on IDE in debug mode
+# Allows the app to run in IDE terminal in debug mode
 if __name__ == "__main__":
     app.run(debug=True)
