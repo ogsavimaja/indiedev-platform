@@ -4,18 +4,29 @@ import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from secrets import token_hex
 import config
+import announcements
 
 app = Flask(__name__)
 app.secret_key = config.secret_key
 
-# TODO - Add a language selector
-# language="english"
 
 # Render front page
 @app.route("/")
 def index():
-    return render_template("index.html")
+    all_announcements = announcements.get_announcements()
+    return render_template("index.html", announcements=all_announcements)
 
+# Render announcement page
+@app.route("/announcement/<int:announcement_id>")
+def announcement(announcement_id):
+    announcement = announcements.get_announcement(announcement_id)
+    return render_template("announcement.html", announcement=announcement)
+
+#render error page
+def errorpage(error_message, error_type):
+    return render_template("errorpage.html", error_message=error_message, error_type=error_type)
+
+# Render announcement creation page
 @app.route("/new_announcement", methods=["GET", "POST"])
 def new_announcement():
     if not session.get("username"):
@@ -23,23 +34,30 @@ def new_announcement():
     if request.method == "POST":
         title = request.form["title"]
         description = request.form["description"]
+        download_link = request.form["download_link"]
         intented_price = request.form["intented_price"]
         age_restriction = request.form["age_restriction"]
 
         # Validate user input
         if not title or not description:
-            return "ERROR: All fields marked with * are required"
+            return errorpage("All fields marked with * are required", "Error while creating announcement")
+        if len(title) > 100:
+            return errorpage("Title must be less than 100 characters", "Error while creating announcement")
+        if len(description) > 1000:
+            return errorpage("Description must be less than 1000 characters", "Error while creating announcement")
+        if download_link:
+            if not download_link.startswith("http"):
+                return errorpage("Invalid download link", "Error while creating announcement")
         if intented_price:
             if not intented_price.isdigit():
-                return "ERROR: Price must be a number"
+                return errorpage("Price must be a number (0 for free), (currently supports only integers)", "Error while creating announcement")
         if age_restriction:
             if not age_restriction.isdigit():
-                return "ERROR: Age restriction must be a number"
+                return errorpage("Age restriction must be a number", "Error while creating announcement")
+
 
         # Insert announcement into database
-        sql_query = """INSERT INTO Announcements (user_id, title, about, intented_price, intented_age_restriction)
-                       VALUES (?, ?, ?, ?, ?)"""
-        db.execute(sql_query, [session["user_id"], title, description, intented_price, age_restriction,])
+        announcements.add_announcement(session["user_id"], title, download_link, description, intented_price, age_restriction)
         return redirect("/")
 
     return render_template("new_announcement.html")
@@ -52,15 +70,15 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
         if not username or not password:
-            return "ERROR: All fields are required"
+            return errorpage("All fields are required", "Error while logging in")
 
         # Check if user exists
-        sql_query = """SELECT *
+        sql_query = """SELECT id, username, hashed_password, salt
                        FROM Users
                        WHERE username = ?"""
         user_data = db.query(sql_query, [username])
         if not user_data:
-            return "ERROR: Invalid Credentials"
+            return errorpage("Invalid Credentials", "Error while logging in")
 
         # Check if password is correct
         user_data = user_data[0]
@@ -68,8 +86,7 @@ def login():
             session["username"] = user_data["username"]
             session["user_id"] = user_data["id"]
             return redirect("/")
-
-        return "ERROR: Invalid Credentials"
+        return errorpage("Invalid Credentials", "Error while logging in")
 
     return render_template("login.html")
 
@@ -96,27 +113,27 @@ def create():
 
     # Validate user input
     if not username or not password or not confirm_password:
-        return "ERROR: All fields except email are required"
+        return errorpage("All fields marked with * are required", "Error while creating account")
     if len(password) < 8:
-        return "ERROR: Password must be at least 8 characters long"
+        return errorpage("Password must be at least 8 characters long", "Error while creating account")
     if len(username) < 3:
-        return "ERROR: Username must be at least 3 characters long"
+        return errorpage("Username must be at least 3 characters long", "Error while creating account")
     if password != confirm_password:
-        return "ERROR: Passwords do not match"
+        return errorpage("Passwords do not match", "Error while creating account")
     if email:
         if not ("@" and "." in email):
-            return "Invalid email"
+            return errorpage("Invalid email", "Error while creating account")
 
 
-    # Check if username already exists
+    # Check if username already exists, if not, create account
     try:
         sql_query = """INSERT INTO Users (username, salt, hashed_password, email)
                        VALUES (?, ?, ?, ?)"""
-        db.execute(sql_query, [username, salt, generate_password_hash(password + salt), email])
+        db.execute(sql_query, [username, salt, generate_password_hash(password+salt), email])
     except sqlite3.IntegrityError:
-        return "ERROR: Username already exists"
+        return errorpage("Username already exists", "Error while creating account")
 
-    return "Account created"
+    return render_template("account_created.html")
 
 
 
