@@ -30,17 +30,17 @@ All of the saved passwords stored in the database are salted before hashing for 
 
 
 ## How to use
-1. Download the repository
+1. Download the repository.<br/>
    Use your desired method or download the .zip file from [Here](https://github.com/ogsavimaja/indiedev-platform/archive/refs/heads/main.zip).
 
-2. Download Flask if you don't have it installed already.
+2. Download Flask if you don't have it installed already.<br/>
    You can download Flask by using pip if you have pip added to your PATH by using the command shown below in terminal or download it from [pypi.org](https://pypi.org/project/Flask/).
  
 ```
 pip install flask
 ```
 
-3. Create database and tables
+3. Create database and tables.<br/>
    You can create database and the tables in it to the folder containing this project by using commands listed below in your terminal if you are using Linux or by creating a database.db file, opening it with SQLite and     using command `.read schema.sql`.
 
 ```
@@ -48,9 +48,8 @@ sqlite3 database.db < schema.sql
 sqlite3 database.db < init.sql
 ```
 
-4. Run the program
-   You can run the program by running the command shown below in a terminal that has been opened inside the folder containing this application if you have Flask added to your PATH or by running App.py (launches the     
-   application in debug mode).
+4. Run the program.<br/>
+   You can run the program by running the command shown below in a terminal that has been opened inside the folder containing this application if you have Flask added to your PATH or by running App.py (launches the  application in debug mode).
 
 ```
 flask run
