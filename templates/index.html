@@ -29,10 +29,17 @@
     <a href="/login">log in</a>.
     </p>
     {% endif %}
+    <a href="/search">Search tool</a>
 
     <h2>Latest announcements</h2>
+    <form action="/search" method="get">
+      <p>
+        Search from all announcements:
+        <input type="text" name="query" />
+      </p>
+      <input type="submit" value="Search" />
+    </form>
     <hr />
-
     {% for announcement in announcements %}
     <p>
       <a href="/announcement/{{ announcement.id }}">{{ announcement.title }}</a>

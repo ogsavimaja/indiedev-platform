@@ -22,10 +22,23 @@ def errorpage(error_message, error_type):
     return render_template("errorpage.html", error_message=error_message, error_type=error_type)
 
 
+# Render search page
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    if request.method == "GET":
+        query = request.args.get("query")
+        print(query)
+        results = announcements.search_announcements(query) if query else None
+        return render_template("search.html", query=query, results=results)
+    return redirect("/")
+
+
 # Render announcement page
 @app.route("/announcement/<int:announcement_id>")
 def announcement(announcement_id):
     announcement = announcements.get_announcement(announcement_id)
+    if not announcement:
+        return errorpage("Announcement not found", "Error while loading announcement")
     return render_template("announcement.html", announcement=announcement)
 
 
@@ -44,8 +57,8 @@ def new_announcement():
         # Validate user input
         if not title or not description:
             return errorpage("All fields marked with * are required", "Error while creating announcement")
-        if len(title) > 100:
-            return errorpage("Title must be less than 100 characters", "Error while creating announcement")
+        if len(title) > 70:
+            return errorpage("Title must be less than 70 characters", "Error while creating announcement")
         if len(description) > 1000:
             return errorpage("Description must be less than 1000 characters", "Error while creating announcement")
         if download_link:
@@ -67,15 +80,16 @@ def new_announcement():
 # Render announcement edit page
 @app.route("/announcement/<int:announcement_id>/edit", methods=["GET", "POST"])
 def edit_announcement(announcement_id):
-    # Check if user is logged in
+    # Check if announcement excist, user is logged in and authorized to remove announcement
+    announcement = announcements.get_announcement(announcement_id)
+    if not announcement:
+        return errorpage("Announcement not found", "Error while editing announcement")
     if not session.get("username"):
         return redirect("/login")
-
-    # Check if user is authorized to edit announcement
-    announcement = announcements.get_announcement(announcement_id)
     if session["user_id"] != announcement["user_id"]:
         return errorpage("You are not authorized to edit this announcement", "Error while editing announcement")
 
+    # Check if user is sending the edit form or just requesting the page
     if request.method == "POST":
         if "confirm" in request.form:
             title = request.form["title"]
@@ -87,8 +101,8 @@ def edit_announcement(announcement_id):
             # Validate user input
             if not title or not description:
                 return errorpage("All fields marked with * are required", "Error while editing announcement")
-            if len(title) > 100:
-                return errorpage("Title must be less than 100 characters", "Error while editing announcement")
+            if len(title) > 70:
+                return errorpage("Title must be less than 70 characters", "Error while editing announcement")
             if len(description) > 1000:
                 return errorpage("Description must be less than 1000 characters", "Error while editing announcement")
             if download_link:
@@ -111,12 +125,12 @@ def edit_announcement(announcement_id):
 # Render announcement remove page
 @app.route("/announcement/<int:announcement_id>/remove", methods=["GET", "POST"])
 def remove_announcement(announcement_id):
-    # Check if user is logged in
+    # Check if announcement excist, user is logged in and authorized to remove announcement
+    announcement = announcements.get_announcement(announcement_id)
+    if not announcement:
+        return errorpage("Announcement not found", "Error while removing announcement")
     if not session.get("username"):
         return redirect("/login")
-
-    # Check if user is authorized to remove announcement
-    announcement = announcements.get_announcement(announcement_id)
     if session["user_id"] != announcement["user_id"]:
         return errorpage("You are not authorized to remove this announcement", "Error while removing announcement")
 
