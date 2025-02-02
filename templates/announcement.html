@@ -10,7 +10,8 @@
 
   {% if session.user_id == announcement.user_id %}
   <p>
-    <a href="/announcement/{{ announcement.id }}/edit">Edit</a>
+    <a href="/announcement/{{ announcement.id }}/edit">Edit</a> &nbsp;
+    <a href="/announcement/{{ announcement.id }}/remove">Remove</a>
   </p>
   {% endif %}
 

@@ -42,3 +42,8 @@ def update_announcement(announcement_id, title, download_link, description, inte
                        updated_at = (datetime('now', 'localtime'))
                    WHERE id = ?"""
     db.execute(sql_query, [title, download_link, description, intented_price, age_restriction, announcement_id])
+
+def remove_announcement(announcement_id):
+    sql_query = """DELETE FROM Announcements
+                   WHERE id = ?"""
+    db.execute(sql_query, [announcement_id])
