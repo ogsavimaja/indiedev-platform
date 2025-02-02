@@ -16,15 +16,56 @@ def index():
     all_announcements = announcements.get_announcements()
     return render_template("index.html", announcements=all_announcements)
 
+# Render error page
+def errorpage(error_message, error_type):
+    return render_template("errorpage.html", error_message=error_message, error_type=error_type)
+
 # Render announcement page
 @app.route("/announcement/<int:announcement_id>")
 def announcement(announcement_id):
     announcement = announcements.get_announcement(announcement_id)
     return render_template("announcement.html", announcement=announcement)
 
-#render error page
-def errorpage(error_message, error_type):
-    return render_template("errorpage.html", error_message=error_message, error_type=error_type)
+# Render announcement edit page
+@app.route("/announcement/<int:announcement_id>/edit", methods=["GET", "POST"])
+def edit_announcement(announcement_id):
+    if not session.get("username"):
+        return redirect("/login")
+
+    announcement = announcements.get_announcement(announcement_id)
+    if session["user_id"] != announcement["user_id"]:
+        return errorpage("You are not authorized to edit this announcement", "Error while editing announcement")
+
+    if request.method == "POST":
+        print("works")
+        title = request.form["title"]
+        description = request.form["description"]
+        download_link = request.form["download_link"]
+        intented_price = request.form["intented_price"]
+        age_restriction = request.form["age_restriction"]
+
+        # Validate user input
+        if not title or not description:
+            return errorpage("All fields marked with * are required", "Error while editing announcement")
+        if len(title) > 100:
+            return errorpage("Title must be less than 100 characters", "Error while editing announcement")
+        if len(description) > 1000:
+            return errorpage("Description must be less than 1000 characters", "Error while editing announcement")
+        if download_link:
+            if not download_link.startswith("http"):
+                return errorpage("Invalid download link", "Error while editing announcement")
+        if intented_price:
+            if not intented_price.isdigit():
+                return errorpage("Price must be a number (0 for free), (currently supports only integers)", "Error while editing announcement")
+        if age_restriction:
+            if not age_restriction.isdigit():
+                return errorpage("Age restriction must be a number", "Error while editing announcement")
+
+        # Update announcement in database
+        announcements.update_announcement(announcement_id, title, download_link, description, intented_price, age_restriction)
+        return redirect("/announcement/" + str(announcement_id))
+
+    return render_template("edit_announcement.html", announcement=announcement)
 
 # Render announcement creation page
 @app.route("/new_announcement", methods=["GET", "POST"])
@@ -65,7 +106,7 @@ def new_announcement():
 # Render login page
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    # Check if user is already logged in
+    # Check if user is sending the login form or just requesting the page
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -98,43 +139,41 @@ def logout():
     return redirect("/")
 
 # Render register page
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
+    # Check if user is sending the register form or just requesting the page
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        salt = token_hex(10)
+        confirm_password = request.form["confirm_password"]
+        email = request.form["email"]
+
+        # Validate user input
+        if not username or not password or not confirm_password:
+            return errorpage("All fields except email are required", "Error while creating account")
+        if len(password) < 8:
+            return errorpage("Password must be at least 8 characters long", "Error while creating account")
+        if len(username) < 3:
+            return errorpage("Username must be at least 3 characters long", "Error while creating account")
+        if password != confirm_password:
+            return errorpage("Passwords do not match", "Error while creating account")
+        if email:
+            if not "@" in email or not "." in email:
+                return errorpage("Invalid email", "Error while creating account")
+
+
+        # Check if username already exists, if not, create account
+        try:
+            sql_query = """INSERT INTO Users (username, salt, hashed_password, email)
+                        VALUES (?, ?, ?, ?)"""
+            db.execute(sql_query, [username, salt, generate_password_hash(password+salt), email])
+        except sqlite3.IntegrityError:
+            return errorpage("Username already exists", "Error while creating account")
+
+        return render_template("account_created.html")
+
     return render_template("register.html")
-
-# Create user's account
-@app.route("/create", methods=["POST"])
-def create():
-    username = request.form["username"]
-    password = request.form["password"]
-    salt = token_hex(10)
-    confirm_password = request.form["confirm_password"]
-    email = request.form["email"]
-
-    # Validate user input
-    if not username or not password or not confirm_password:
-        return errorpage("All fields marked with * are required", "Error while creating account")
-    if len(password) < 8:
-        return errorpage("Password must be at least 8 characters long", "Error while creating account")
-    if len(username) < 3:
-        return errorpage("Username must be at least 3 characters long", "Error while creating account")
-    if password != confirm_password:
-        return errorpage("Passwords do not match", "Error while creating account")
-    if email:
-        if not ("@" and "." in email):
-            return errorpage("Invalid email", "Error while creating account")
-
-
-    # Check if username already exists, if not, create account
-    try:
-        sql_query = """INSERT INTO Users (username, salt, hashed_password, email)
-                       VALUES (?, ?, ?, ?)"""
-        db.execute(sql_query, [username, salt, generate_password_hash(password+salt), email])
-    except sqlite3.IntegrityError:
-        return errorpage("Username already exists", "Error while creating account")
-
-    return render_template("account_created.html")
-
 
 
 

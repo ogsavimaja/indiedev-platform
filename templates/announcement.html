@@ -8,6 +8,12 @@
 <body>
   <h1>{{ announcement.title }}</h1>
 
+  {% if session.user_id == announcement.user_id %}
+  <p>
+    <a href="/announcement/{{ announcement.id }}/edit">Edit</a>
+  </p>
+  {% endif %}
+
   <p>
     Description: <br />
     {{ announcement.about }}
@@ -35,7 +41,7 @@
   {% if announcement.download_link %}
   <p>
     Download link:
-    <a href="{{ announcement.download_link }}">{{ announcement.download_link }}</a>
+    <a href="{{ announcement.download_link }}" target="_blank" rel="noopener noreferrer">{{ announcement.download_link }}</a>
   </p>
   {% endif %}
 
