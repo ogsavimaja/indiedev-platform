@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from secrets import token_hex
 import config
 import announcements
+import users
 
 app = Flask(__name__)
 app.secret_key = config.secret_key
@@ -140,6 +141,16 @@ def remove_announcement(announcement_id):
             return redirect("/")
         return redirect("/announcement/" + str(announcement_id))
     return render_template("remove_announcement.html", announcement=announcement)
+
+# Render user page
+@app.route("/user/<int:user_id>")
+def user(user_id):
+    user_data = db.query("SELECT username FROM Users WHERE id = ?", [user_id])
+    if not user_data:
+        return errorpage("User not found", "Error while loading user")
+    user_data = user_data[0]
+    user_announcements = users.get_user_announcements(user_id)
+    return render_template("userpage.html", user=user_data, announcements=user_announcements)
 
 
 # Render login page
