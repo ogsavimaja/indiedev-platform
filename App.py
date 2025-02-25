@@ -40,23 +40,42 @@ def announcement(announcement_id):
     announcement = announcements.get_announcement(announcement_id)
     if not announcement:
         return errorpage("Announcement not found", "Error while loading announcement")
-    return render_template("announcement.html", announcement=announcement)
-
+    
+    result = announcements.get_one_announcement_classes(announcement_id)
+    classes = result [0]
+    lengths = result[1]
+    return render_template("announcement.html", announcement=announcement, classes=classes, lengths=lengths)
 
 # Render announcement creation page
 @app.route("/new_announcement", methods=["GET", "POST"])
 def new_announcement():
     if not session.get("username"):
         return redirect("/login")
+
+    result = announcements.get_announcement_classes()
+    classes = result[0]
+    class_types = result[1]
+
     if request.method == "POST":
-        title = request.form["title"]
+        title = request.form["name_of_the_game"]
         description = request.form["description"]
         download_link = request.form["download_link"]
         intented_price = request.form["intented_price"]
         age_restriction = request.form["age_restriction"]
 
+        # Add classes into a list
+        state = None
+        classes = []
+        for name in class_types.keys():
+            result = request.form.getlist(name)
+            if result != [""]:
+                for value in result:
+                    classes.append((name, value))
+                if name == "State":
+                    state = True
+
         # Validate user input
-        if not title or not description:
+        if not title or not description or not state:
             return errorpage("All fields marked with * are required", "Error while creating announcement")
         if len(title) > 70:
             return errorpage("Title must be less than 70 characters", "Error while creating announcement")
@@ -72,10 +91,11 @@ def new_announcement():
             if not age_restriction.isdigit():
                 return errorpage("Age restriction must be a number", "Error while creating announcement")
 
-        # Insert announcement into database
-        announcements.add_announcement(session["user_id"], title, download_link, description, intented_price, age_restriction)
+        # Insert data into database
+        announcements.add_announcement(session["user_id"], title, download_link, description, intented_price, age_restriction, classes)
+
         return redirect("/")
-    return render_template("new_announcement.html")
+    return render_template("new_announcement.html", classes=classes, class_types=class_types)
 
 
 # Render announcement edit page
@@ -90,17 +110,33 @@ def edit_announcement(announcement_id):
     if session["user_id"] != announcement["user_id"]:
         return errorpage("You are not authorized to edit this announcement", "Error while editing announcement")
 
+    result = announcements.get_announcement_classes()
+    all_classes = result[0]
+    class_types = result[1]
+    right_classes = announcements.get_one_announcement_classes(announcement_id)[0]
+
     # Check if user is sending the edit form or just requesting the page
     if request.method == "POST":
         if "confirm" in request.form:
-            title = request.form["title"]
+            title = request.form["name_of_the_game"]
             description = request.form["description"]
             download_link = request.form["download_link"]
             intented_price = request.form["intented_price"]
             age_restriction = request.form["age_restriction"]
 
+            # Add classes into a list
+            state = None
+            classes = []
+            for name in class_types.keys():
+                result = request.form.getlist(name)
+                if result != [""]:
+                    for value in result:
+                        classes.append((name, value))
+                    if name == "State":
+                        state = True
+
             # Validate user input
-            if not title or not description:
+            if not title or not description or not state:
                 return errorpage("All fields marked with * are required", "Error while editing announcement")
             if len(title) > 70:
                 return errorpage("Title must be less than 70 characters", "Error while editing announcement")
@@ -117,10 +153,10 @@ def edit_announcement(announcement_id):
                     return errorpage("Age restriction must be a number", "Error while editing announcement")
 
             # Update announcement in database
-            announcements.update_announcement(announcement_id, title, download_link, description, intented_price, age_restriction)
+            announcements.update_announcement(announcement_id, title, download_link, description, intented_price, age_restriction, classes)
             return redirect("/announcement/" + str(announcement_id))
         return redirect("/announcement/" + str(announcement_id))
-    return render_template("edit_announcement.html", announcement=announcement)
+    return render_template("edit_announcement.html", announcement=announcement, classes=all_classes, class_types=class_types, right_classes=right_classes)
 
 
 # Render announcement remove page
