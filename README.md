@@ -64,4 +64,4 @@ flask run
 > If you don't have [Python](https://www.python.org/downloads/) or [SQLite](https://www.sqlite.org/download.html) downloaded, you can use the links imbedded into this note to navigate to the corresponding download sites.
 
 > [!TIP]
-> This application can be run in VS Code (in debug mode) by running App.py in basic VS Code enviromment
+> This application can be run in VS Code (in debug mode) by running App.py in a basic VS Code enviromment
