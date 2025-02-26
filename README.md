@@ -45,7 +45,7 @@ pip install flask
 ```
 
 3. Create database and tables.<br/>
-   You can create database and the tables in it to the folder containing this project by using commands listed below in your terminal if you are using Linux or by creating a database.db file, opening it with SQLite and     using command `.read schema.sql`.
+   You can create database and the tables in it to the folder containing this project by using commands listed below in your terminal if you are using Linux or by creating a database.db file, opening it with SQLite and     using commands `.read schema.sql` and `.read init.sql`.
 
 ```
 sqlite3 database.db < schema.sql
