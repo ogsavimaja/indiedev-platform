@@ -20,8 +20,11 @@ What users will be able to do in the app once finished:
 
 * User can create an account and use it to sign in to the app
 * User can add, edit and delete project announcements
+* User can choose, edit and remove different classes for their announcement
+* User can add, edit and remove comments on announcements
 * User sees project announcements added to the app
 * User can search project announcements with a keyword (title&description)
+* User can open userpage of others and his own from announcement, comment or only his own from homepage
 
 Current verion of the app accounts for most of if not all of the common errortypes and I werent able to find a way to "crash" the application by using only browser.
 The current version of the app also has protective measures against potential misusage of the app like trying to edit/remove announcements without authority.
