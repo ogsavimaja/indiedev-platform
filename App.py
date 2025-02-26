@@ -53,7 +53,7 @@ def new_announcement():
         return redirect("/login")
 
     result = announcements.get_announcement_classes()
-    classes = result[0]
+    all_classes = result[0]
     class_types = result[1]
 
     if request.method == "POST":
@@ -70,9 +70,12 @@ def new_announcement():
             result = request.form.getlist(name)
             if result != [""]:
                 for value in result:
-                    classes.append((name, value))
-                if name == "State":
-                    state = True
+                    if value in all_classes[name]:
+                        classes.append((name, value))
+                        if name == "State":
+                            state = True
+                    else:
+                        return errorpage("Invalid input", "Error while creating announcement")
 
         # Validate user input
         if not title or not description or not state:
@@ -95,7 +98,7 @@ def new_announcement():
         announcements.add_announcement(session["user_id"], title, download_link, description, intented_price, age_restriction, classes)
 
         return redirect("/")
-    return render_template("new_announcement.html", classes=classes, class_types=class_types)
+    return render_template("new_announcement.html", classes=all_classes, class_types=class_types)
 
 
 # Render announcement edit page
@@ -131,9 +134,12 @@ def edit_announcement(announcement_id):
                 result = request.form.getlist(name)
                 if result != [""]:
                     for value in result:
-                        classes.append((name, value))
-                    if name == "State":
-                        state = True
+                        if value in all_classes[name]:
+                            classes.append((name, value))
+                            if name == "State":
+                                state = True
+                        else:
+                            return errorpage("Invalid input", "Error while creating announcement")
 
             # Validate user input
             if not title or not description or not state:
