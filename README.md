@@ -24,6 +24,14 @@ The current version of the app also has protective measures against potential mi
 All of the saved passwords stored in the database are salted before hashing for vastly added rainbow table attack resistance and slightly added dictionary/bruteforce attack resistance in case of database breach.
 
 
+## Planned features
+There are multiple new features planned for this app which are still in the development such as:
+* Ability to select a language
+* Sorting of search results by a category
+* Voting system for good announcements and feedback/comments
+* About page
+* Multiple QOL and visual improvements
+
 
 ## How to use
 1. Download the repository.<br/>
